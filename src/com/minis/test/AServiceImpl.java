@@ -7,10 +7,10 @@ package com.minis.test;
  * @Author: Jinqiang.Jiao
  * @Date: 2023/7/9 - 21:07
  */
-public class AServiceImpl implements AService{
+public class AServiceImpl {
+    private String property1;
 
-    @Override
-    public void sayHello() {
-        System.out.println("a service 1 say hello");
+    public void setProperty1(String property1){
+        this.property1 = property1;
     }
 }

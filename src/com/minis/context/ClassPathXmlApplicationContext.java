@@ -17,11 +17,11 @@ import java.util.*;
  * @Author: Jinqiang.Jiao
  * @Date: 2023/7/9 - 16:41
  */
-public class ClassPathXmlApplicationContext implements BeanFactory {
-    BeanFactory beanFactory;
+public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationEventPublisher {
+    SimpleBeanFactory beanFactory;
     public ClassPathXmlApplicationContext(String fileName){
         Resource resource = new ClassPathXmlResource(fileName);
-        BeanFactory beanFactory = new SimpleBeanFactory();
+        SimpleBeanFactory beanFactory = new SimpleBeanFactory();
         XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(beanFactory);
         reader.loadBeanDefinitions(resource);
         this.beanFactory = beanFactory;
@@ -32,9 +32,39 @@ public class ClassPathXmlApplicationContext implements BeanFactory {
     }
 
     @Override
-    public void registerBeanDefinition(BeanDefinition beanDefinition) {
-        this.beanFactory.registerBeanDefinition(beanDefinition);
+    public Boolean containsBean(String name) {
+        return this.beanFactory.containsBean(name);
     }
+
+    @Override
+    public boolean isSingleton(String name) {
+        return false;
+    }
+
+    @Override
+    public boolean isPrototype(String name) {
+        return false;
+    }
+
+    @Override
+    public Class<?> getType(String name) {
+        return null;
+    }
+
+    @Override
+    public void registerBean(String beanName, Object obj) {
+        this.beanFactory.registerBean(beanName, obj);
+    }
+
+    @Override
+    public void publishEvent(ApplicationEvent event) {
+
+    }
+
+//    @Override
+//    public void registerBeanDefinition(BeanDefinition beanDefinition) {
+//        this.beanFactory.registerBeanDefinition(beanDefinition);
+//    }
 //    private List<BeanDefinition> beanDefinitions = new ArrayList<>();
 //    private Map<String, Object> singletons = new HashMap<>();
 //    public ClassPathXmlApplicationContext(String fileName){
