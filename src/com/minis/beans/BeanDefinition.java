@@ -10,7 +10,7 @@ package com.minis.beans;
 public class BeanDefinition {
     String SCOPE_SINGLETON = "singleton";
     String SCOPE_PROTOTYPE = "prototype";
-    private boolean lazyInit = false;
+    private boolean lazyInit = true;
 
     public String[] getDependsOn() {
         return dependsOn;
