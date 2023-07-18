@@ -11,7 +11,7 @@ import com.minis.context.ClassPathXmlApplicationContext;
  * @Date: 2023/7/9 - 21:09
  */
 public class Test1 {
-    public static void main(String[] args) throws BeansException {
+    public static void main(String[] args) throws BeansException, IllegalAccessException {
         ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext("beans.xml");
         AService aService;
         aService = (AService) ctx.getBean("aservice");

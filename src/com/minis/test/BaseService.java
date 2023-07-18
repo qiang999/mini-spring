@@ -1,5 +1,7 @@
 package com.minis.test;
 
+import com.minis.beans.factory.annotation.Autowired;
+
 /**
  * @Title: BaseService
  * @Package: com.minis.test
@@ -16,5 +18,13 @@ public class BaseService {
         this.bbs = bbs;
     }
 
+    @Autowired
     private BaseBaseService bbs;
+
+    public BaseService(){}
+
+    public void sayHello() {
+        System.out.println("Base Service says Hello");
+        bbs.sayHello();
+    }
 }

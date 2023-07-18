@@ -1,5 +1,11 @@
-package com.minis.beans;
+package com.minis.beans.factory.xml;
 
+import com.minis.beans.*;
+import com.minis.beans.factory.config.ConstructorArgumentValue;
+import com.minis.beans.factory.config.ConstructorArgumentValues;
+import com.minis.beans.factory.config.BeanDefinition;
+import com.minis.beans.factory.support.AbstractBeanFactory;
+import com.minis.beans.factory.support.SimpleBeanFactory;
 import com.minis.core.Resource;
 import org.dom4j.Element;
 
@@ -14,10 +20,10 @@ import java.util.List;
  * @Date: 2023/7/10 - 14:48
  */
 public class XmlBeanDefinitionReader {
-    SimpleBeanFactory simpleBeanFactory;
+    AbstractBeanFactory beanFactory;
 
-    public XmlBeanDefinitionReader(SimpleBeanFactory simpleBeanFactory){
-        this.simpleBeanFactory = simpleBeanFactory;
+    public XmlBeanDefinitionReader(AbstractBeanFactory beanFactory){
+        this.beanFactory = beanFactory;
     }
 
     public void loadBeanDefinitions(Resource resource){
@@ -53,17 +59,17 @@ public class XmlBeanDefinitionReader {
             beanDefinition.setDependsOn(refArray);
 
             List<Element> constructorElements = element.elements("constructor-arg");
-            ArgumentValues AVS = new ArgumentValues();
+            ConstructorArgumentValues AVS = new ConstructorArgumentValues();
             for (Element e:
                  constructorElements) {
                 String aType = e.attributeValue("type");
                 String aName = e.attributeValue("name");
                 String aValue = e.attributeValue("value");
-                AVS.addArgumentValue(new ArgumentValue(aType, aName, aValue));
+                AVS.addArgumentValue(new ConstructorArgumentValue(aType, aName, aValue));
             }
             beanDefinition.setConstructorArgumentValues(AVS);
 
-            this.simpleBeanFactory.registerBeanDefinition(beanID, beanDefinition);
+            this.beanFactory.registerBeanDefinition(beanID, beanDefinition);
         }
     }
 }

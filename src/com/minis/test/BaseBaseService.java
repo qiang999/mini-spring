@@ -17,4 +17,8 @@ public class BaseBaseService {
     }
 
     private AServiceImpl as;
+
+    public void sayHello() {
+        System.out.println("bbs");
+    }
 }

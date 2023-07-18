@@ -1,14 +1,15 @@
 package com.minis.context;
 
 import com.minis.beans.*;
+import com.minis.beans.factory.BeanFactory;
+import com.minis.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
+import com.minis.beans.factory.config.AutowireCapableBeanFactory;
+import com.minis.beans.factory.support.SimpleBeanFactory;
+import com.minis.beans.factory.xml.XmlBeanDefinitionReader;
 import com.minis.core.ClassPathXmlResource;
 import com.minis.core.Resource;
-import org.dom4j.Document;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
 
-import java.net.URL;
-import java.util.*;
+import java.util.List;
 
 /**
  * @Title: ClassPathXmlApplicationContext
@@ -18,8 +19,8 @@ import java.util.*;
  * @Date: 2023/7/9 - 16:41
  */
 public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationEventPublisher {
-    SimpleBeanFactory beanFactory;
-    public ClassPathXmlApplicationContext(String fileName){
+    AutowireCapableBeanFactory beanFactory;
+    public ClassPathXmlApplicationContext(String fileName) throws BeansException, IllegalAccessException {
 //        Resource resource = new ClassPathXmlResource(fileName);
 //        SimpleBeanFactory beanFactory = new SimpleBeanFactory();
 //        XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(beanFactory);
@@ -28,14 +29,14 @@ public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationE
         this(fileName, true);
     }
 
-    public ClassPathXmlApplicationContext(String fileName, boolean isRefresh){
+    public ClassPathXmlApplicationContext(String fileName, boolean isRefresh) throws BeansException, IllegalAccessException {
         Resource resource = new ClassPathXmlResource(fileName);
-        SimpleBeanFactory simpleBeanFactory = new SimpleBeanFactory();
-        XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(simpleBeanFactory);
+        AutowireCapableBeanFactory beanFactory = new AutowireCapableBeanFactory();
+        XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(beanFactory);
         reader.loadBeanDefinitions(resource);
-        this.beanFactory = simpleBeanFactory;
+        this.beanFactory = beanFactory;
         if (isRefresh){
-            this.beanFactory.refresh();
+            refresh();
         }
     }
 
@@ -70,51 +71,17 @@ public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationE
     }
 
     @Override
-    public void publishEvent(ApplicationEvent event) {
+    public void publishEvent(ApplicationEvent event) {}
 
+    public void refresh() throws BeansException, IllegalAccessException{
+        registerBeanPostProcessors(this.beanFactory);
     }
 
-//    @Override
-//    public void registerBeanDefinition(BeanDefinition beanDefinition) {
-//        this.beanFactory.registerBeanDefinition(beanDefinition);
-//    }
-//    private List<BeanDefinition> beanDefinitions = new ArrayList<>();
-//    private Map<String, Object> singletons = new HashMap<>();
-//    public ClassPathXmlApplicationContext(String fileName){
-//        this.readXml(fileName);
-//        this.instanceBeans();
-//    }
-//
-//    private void readXml(String fileName){
-//        SAXReader saxReader = new SAXReader();
-//        try {
-//            URL xmlPath = this.getClass().getClassLoader().getResource(fileName);
-//            Document document = saxReader.read(xmlPath);
-//            Element rootElement = document.getRootElement();
-//            for (Element element:
-//                    (List<Element>)rootElement.elements()) {
-//                String beanID = element.attributeValue("id");
-//                String beanClassName = element.attributeValue("class");
-//                BeanDefinition beanDefinition = new BeanDefinition(beanID, beanClassName);
-//                beanDefinitions.add(beanDefinition);
-//            }
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
-//
-//    private void instanceBeans(){
-//        for (BeanDefinition beanDefinition:
-//             beanDefinitions) {
-//            try {
-//                singletons.put(beanDefinition.getId(), Class.forName(beanDefinition.getClassName()).newInstance());
-//            } catch (Exception e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
-//    }
-//
-//    public Object getBean(String beanName){
-//        return singletons.get(beanName);
-//    }
+    private void registerBeanPostProcessors(AutowireCapableBeanFactory beanFactory){
+        beanFactory.addBeanPostProcessor(new AutowiredAnnotationBeanPostProcessor());
+    }
+
+    private void onRefresh(){
+        this.beanFactory.refresh();
+    }
 }
