@@ -1,13 +1,13 @@
-package com.minis.context;
+package com.minis.beans.factory.support;
 
-import com.minis.beans.factory.support.ApplicationListener;
+import com.minis.context.ApplicationEvent;
 
 /**
  * @Title: ApplicationEventPublisher
- * @Package: com.minis.context
+ * @Package: com.minis.beans.factory.support
  * @Description:
  * @Author: Jinqiang.Jiao
- * @Date: 2023/7/11 - 11:20
+ * @Date: 2023/7/18 - 16:57
  */
 public interface ApplicationEventPublisher {
     void publishEvent(ApplicationEvent event);
