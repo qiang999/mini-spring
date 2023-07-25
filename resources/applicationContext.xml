@@ -1,7 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <beans>
     <bean id="bbs" class="com.minis.test.service.BaseBaseService">
-        <property type="com.minis.test.service.AServiceImpl" name="as" ref="aservice" />
+        <property type="com.minis.test.service.AServiceImpl" name="as" ref="aservice"/>
     </bean>
     <bean id="aservice" class="com.minis.test.service.AServiceImpl">
         <constructor-arg type="String" name="name" value="abc"/>

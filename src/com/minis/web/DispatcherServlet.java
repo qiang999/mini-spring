@@ -24,6 +24,7 @@ import java.util.Map;
  */
 public class DispatcherServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    private WebApplicationContext webApplicationContext;
     private String sContextConfigLocation;
     private List<String> packageNames = new ArrayList<>();
     private Map<String, Object> controllerObjs = new HashMap<>();
@@ -41,7 +42,7 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException{
         super.init(config);
-
+        this.webApplicationContext = (WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
         sContextConfigLocation = config.getInitParameter("contextConfigLocation");
         URL xmlPath = null;
         try {
