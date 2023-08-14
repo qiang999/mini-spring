@@ -18,6 +18,8 @@ import java.util.Map;
  * @Date: 2023/7/18 - 16:40
  */
 public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFactory implements ConfigurableListableBeanFactory {
+    ConfigurableListableBeanFactory parentBeanFactory;
+
     @Override
     public int getBeanDefinitionCount() {
         return this.beanDefinitionMap.size();
@@ -25,7 +27,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
     @Override
     public String[] getBeanDefinitionNames() {
-        return (String[]) this.beanDefinitionNames.toArray();
+        return (String[]) this.beanDefinitionNames.toArray(new String[this.beanDefinitionNames.size()]);
     }
 
     @Override
@@ -84,5 +86,17 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
     @Override
     public Object applyBeanPostProcessorAfterInitialization(Object existingBean, String beanName) throws BeansException {
         return null;
+    }
+
+    public void setParent(ConfigurableListableBeanFactory beanFactory){
+        this.parentBeanFactory = beanFactory;
+    }
+
+    public Object getBean(String beanName) throws BeansException{
+        Object result = super.getBean(beanName);
+        if (result == null){
+            result = this.parentBeanFactory.getBean(beanName);
+        }
+        return result;
     }
 }

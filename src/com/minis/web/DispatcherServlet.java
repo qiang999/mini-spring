@@ -1,5 +1,7 @@
 package com.minis.web;
 
+import com.minis.web.servlet.*;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -24,7 +26,9 @@ import java.util.Map;
  */
 public class DispatcherServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
+    public static final String WEB_APPLICATION_CONTEXT_ATTRIBUTE = DispatcherServlet.class.getName()+".CONTEXT";
     private WebApplicationContext webApplicationContext;
+    private WebApplicationContext parentApplicationContext;
     private String sContextConfigLocation;
     private List<String> packageNames = new ArrayList<>();
     private Map<String, Object> controllerObjs = new HashMap<>();
@@ -34,6 +38,8 @@ public class DispatcherServlet extends HttpServlet {
     private List<String> urlMappingNames = new ArrayList<>();
     private Map<String, Object> mappingObjs = new HashMap<>();
     private Map<String, Method> mappingMethods = new HashMap<>();
+    private HandlerMapping handlerMapping;
+    private HandlerAdapter handlerAdapter;
 
     public DispatcherServlet(){
         super();
@@ -42,7 +48,7 @@ public class DispatcherServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException{
         super.init(config);
-        this.webApplicationContext = (WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
+        this.parentApplicationContext = (WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
         sContextConfigLocation = config.getInitParameter("contextConfigLocation");
         URL xmlPath = null;
         try {
@@ -51,12 +57,14 @@ public class DispatcherServlet extends HttpServlet {
             throw new RuntimeException(e);
         }
         this.packageNames = XmlScanComponentHelper.getNodeValue(xmlPath);
+        this.webApplicationContext = new AnnotationConfigWebApplicationContext(sContextConfigLocation, this.parentApplicationContext);
         Refresh();
     }
 
     protected void Refresh(){
         initController();
-        initMapping();
+        initHandlerMappings(this.webApplicationContext);
+        initHandlerAdapters(this.webApplicationContext);
     }
 
     protected void initController(){
@@ -147,5 +155,33 @@ public class DispatcherServlet extends HttpServlet {
             throw new RuntimeException(e);
         }
         response.getWriter().append(objResult.toString());
+    }
+
+    protected void initHandlerMappings(WebApplicationContext wac){
+        this.handlerMapping = new RequestMappingHandlerMapping(wac);
+    }
+
+    protected void initHandlerAdapters(WebApplicationContext wac){
+        this.handlerAdapter = new RequestMappingHandlerAdapter(wac);
+    }
+
+    protected void service(HttpServletRequest request, HttpServletResponse response){
+        request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.webApplicationContext);
+        try {
+            doDispatch(request, response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception{
+        HttpServletRequest processedRequest = request;
+        HandlerMethod handlerMethod = null;
+        handlerMethod = this.handlerMapping.getHandler(processedRequest);
+        if (handlerMethod==null){
+            return;
+        }
+        HandlerAdapter ha = this.handlerAdapter;
+        ha.handle(processedRequest, response, handlerMethod);
     }
 }

@@ -100,7 +100,7 @@ public class BeanDefinition {
     }
 
     public void setConstructorArgumentValues(ConstructorArgumentValues constructorArgumentValues) {
-        this.constructorArgumentValues = constructorArgumentValues;
+        this.constructorArgumentValues = (constructorArgumentValues!=null?constructorArgumentValues:new ConstructorArgumentValues());
     }
 
     public boolean isSingleton(){

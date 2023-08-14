@@ -153,32 +153,37 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         try {
             clz = Class.forName(beanDefinition.getClassName());
             ConstructorArgumentValues argumentValues = beanDefinition.getConstructorArgumentValues();
-            if (!argumentValues.isEmpty()){
-                Class<?>[] paramTypes = new Class<?>[argumentValues.getArgumentValueCount()];
-                Object[] paramValues = new Object[argumentValues.getArgumentValueCount()];
-                for (int i = 0;i<argumentValues.getArgumentValueCount();i++) {
-                    ConstructorArgumentValue argumentValue = argumentValues.getIndexedArgumentValue(i);
-                    if ("String".equals(argumentValue.getType())||"java.lang.String".equals(argumentValue.getType())){
-                        paramTypes[i] = String.class;
-                        paramValues[i] = argumentValue.getValue();
-                    }else if ("Integer".equals(argumentValue.getType())||"java.lang.Integer".equals(argumentValue.getType())){
-                        paramTypes[i] = Integer.class;
-                        paramValues[i] = Integer.valueOf((String) argumentValue.getType());
-                    }else if ("int".equals(argumentValue.getType())){
-                        paramTypes[i] = int.class;
-                        paramValues[i] = Integer.valueOf((String) argumentValue.getValue());
-                    }else {
-                        paramTypes[i] = String.class;
-                        paramValues[i] = argumentValue.getValue();
+            if (argumentValues!=null){
+                if (!argumentValues.isEmpty()){
+                    Class<?>[] paramTypes = new Class<?>[argumentValues.getArgumentValueCount()];
+                    Object[] paramValues = new Object[argumentValues.getArgumentValueCount()];
+                    for (int i = 0;i<argumentValues.getArgumentValueCount();i++) {
+                        ConstructorArgumentValue argumentValue = argumentValues.getIndexedArgumentValue(i);
+                        if ("String".equals(argumentValue.getType())||"java.lang.String".equals(argumentValue.getType())){
+                            paramTypes[i] = String.class;
+                            paramValues[i] = argumentValue.getValue();
+                        }else if ("Integer".equals(argumentValue.getType())||"java.lang.Integer".equals(argumentValue.getType())){
+                            paramTypes[i] = Integer.class;
+                            paramValues[i] = Integer.valueOf((String) argumentValue.getType());
+                        }else if ("int".equals(argumentValue.getType())){
+                            paramTypes[i] = int.class;
+                            paramValues[i] = Integer.valueOf((String) argumentValue.getValue());
+                        }else {
+                            paramTypes[i] = String.class;
+                            paramValues[i] = argumentValue.getValue();
+                        }
                     }
+                    try {
+                        con = clz.getConstructor(paramTypes);
+                        obj = con.newInstance(paramValues);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }else {
+                    obj = clz.newInstance();
                 }
-                try {
-                    con = clz.getConstructor(paramTypes);
-                    obj = con.newInstance(paramValues);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }else {
+            }
+            else {
                 obj = clz.newInstance();
             }
         } catch (Exception e) {
@@ -190,49 +195,51 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
     private void handleProperties(BeanDefinition bd, Class<?> clz, Object obj){
         System.out.println("handle properties for bean ："+bd.getId());
         PropertyValues propertyValues = bd.getPropertyValues();
-        if (!propertyValues.isEmpty()){
-            for (int i=0;i<propertyValues.size();i++){
-                PropertyValue propertyValue = propertyValues.getPropertyValueList().get(i);
-                String pName = propertyValue.getName();
-                String pType = propertyValue.getType();
-                Object pValue = propertyValue.getValue();
-                boolean isRef = propertyValue.isRef();
-                Class<?>[] paramTypes = new Class<?>[1];
-                Object[] paramValues = new Object[1];
-                if (!isRef){
-                    if ("String".equals(pType)||"java.lang.String".equals(pType)){
-                        paramTypes[0] = String.class;
-                    } else if ("Integer".equals(pType)||"java.lang.Integer".equals(pType)) {
-                        paramTypes[0] = Integer.class;
-                    } else if ("int".equals(pType)) {
-                        paramTypes[0] = int.class;
+        if (propertyValues!=null){
+            if (!propertyValues.isEmpty()){
+                for (int i=0;i<propertyValues.size();i++){
+                    PropertyValue propertyValue = propertyValues.getPropertyValueList().get(i);
+                    String pName = propertyValue.getName();
+                    String pType = propertyValue.getType();
+                    Object pValue = propertyValue.getValue();
+                    boolean isRef = propertyValue.isRef();
+                    Class<?>[] paramTypes = new Class<?>[1];
+                    Object[] paramValues = new Object[1];
+                    if (!isRef){
+                        if ("String".equals(pType)||"java.lang.String".equals(pType)){
+                            paramTypes[0] = String.class;
+                        } else if ("Integer".equals(pType)||"java.lang.Integer".equals(pType)) {
+                            paramTypes[0] = Integer.class;
+                        } else if ("int".equals(pType)) {
+                            paramTypes[0] = int.class;
+                        }else {
+                            paramTypes[0] = String.class;
+                        }
+                        paramValues[0] = pValue;
                     }else {
-                        paramTypes[0] = String.class;
+                        try {
+                            paramTypes[0] = Class.forName(pType);
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                        try {
+                            paramValues[0] = getBean((String) pValue);
+                        } catch (BeansException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
-                    paramValues[0] = pValue;
-                }else {
+                    String methodName = "set" + pName.substring(0,1).toUpperCase()+pName.substring(1);
+                    Method method = null;
                     try {
-                        paramTypes[0] = Class.forName(pType);
+                        method = clz.getMethod(methodName, paramTypes);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                     try {
-                        paramValues[0] = getBean((String) pValue);
-                    } catch (BeansException e) {
+                        method.invoke(obj, paramValues);
+                    } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-                }
-                String methodName = "set" + pName.substring(0,1).toUpperCase()+pName.substring(1);
-                Method method = null;
-                try {
-                    method = clz.getMethod(methodName, paramTypes);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-                try {
-                    method.invoke(obj, paramValues);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
                 }
             }
         }
