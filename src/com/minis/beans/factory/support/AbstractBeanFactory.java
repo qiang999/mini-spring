@@ -47,13 +47,17 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
             singleton = this.earlySingletonObjects.get(beanName);
             if (singleton == null){
                 BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
-                singleton = createBean(beanDefinition);
-                this.registerBean(beanName, singleton);
-                applyBeanPostProcessorBeforeInitialization(singleton, beanName);
-                if (beanDefinition.getInitMethodName()!=null&&!beanDefinition.equals("")){
-                    invokeInitMethod(beanDefinition, singleton);
+                if(beanDefinition!=null){
+                    singleton = createBean(beanDefinition);
+                    this.registerBean(beanName, singleton);
+                    applyBeanPostProcessorBeforeInitialization(singleton, beanName);
+                    if (beanDefinition.getInitMethodName()!=null&&!beanDefinition.equals("")){
+                        invokeInitMethod(beanDefinition, singleton);
+                    }
+                    applyBeanPostProcessorAfterInitialization(singleton, beanName);
+                }else {
+                    return null;
                 }
-                applyBeanPostProcessorAfterInitialization(singleton, beanName);
             }
         }
         return singleton;

@@ -211,8 +211,19 @@ public class AnnotationConfigWebApplicationContext extends AbstractApplicationCo
 
     @Override
     public void registerListeners() {
-        ApplicationListener listener = new ApplicationListener();
-        this.getApplicationEventPublisher().addApplicationListener(listener);
+        String[] bdNames = this.beanFactory.getBeanDefinitionNames();
+        for (String bdName:
+             bdNames) {
+            Object bean = null;
+            try {
+                bean = getBean(bdName);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            if (bean instanceof ApplicationListener){
+                this.getApplicationEventPublisher().addApplicationListener((ApplicationListener<?>) bean);
+            }
+        }
     }
 
     @Override

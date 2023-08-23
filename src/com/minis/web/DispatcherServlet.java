@@ -1,5 +1,6 @@
 package com.minis.web;
 
+import com.minis.beans.BeansException;
 import com.minis.web.servlet.*;
 
 import javax.servlet.ServletConfig;
@@ -12,10 +13,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @Title: DispatcherSevlet
@@ -26,20 +24,22 @@ import java.util.Map;
  */
 public class DispatcherServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    public static final String WEB_APPLICATION_CONTEXT_ATTRIBUTE = DispatcherServlet.class.getName()+".CONTEXT";
+    public static final String WEB_APPLICATION_CONTEXT_ATTRIBUTE = DispatcherServlet.class.getName() + ".CONTEXT";
+    public static final String HANDLER_MAPPING_BEAN_NAME = "handlerMapping";
+    public static final String HANDLER_ADAPTER_BEAN_NAME = "handlerAdapter";
+    public static final String MULTIPART_RESOLVER_BEAN_NAME = "multipartResolver";
+    public static final String LOCALE_RESOLVER_BEAN_NAME = "localeResolver";
+    public static final String HANDLER_EXCEPTION_RESOLVER_BEAN_NAME = "handlerExceptionResolver";
+    public static final String REQUEST_TO_VIEW_NAME_TRANSLATOR_BEAN_NAME = "viewNameTranslator";
+    public static final String VIEW_RESOLVER_BEAN_NAME = "viewResolver";
+    private static final String DEFAULT_STRATEGIES_PATH = "DispatcherServlet.properties";
+    private static final Properties defaultStrategies = null;
     private WebApplicationContext webApplicationContext;
     private WebApplicationContext parentApplicationContext;
     private String sContextConfigLocation;
-    private List<String> packageNames = new ArrayList<>();
-    private Map<String, Object> controllerObjs = new HashMap<>();
-    private List<String> controllerNames = new ArrayList<>();
-    private Map<String,Class<?>> controllerClasses = new HashMap<>();
-
-    private List<String> urlMappingNames = new ArrayList<>();
-    private Map<String, Object> mappingObjs = new HashMap<>();
-    private Map<String, Method> mappingMethods = new HashMap<>();
     private HandlerMapping handlerMapping;
     private HandlerAdapter handlerAdapter;
+    private ViewResolver viewResolver;
 
     public DispatcherServlet(){
         super();
@@ -50,119 +50,38 @@ public class DispatcherServlet extends HttpServlet {
         super.init(config);
         this.parentApplicationContext = (WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
         sContextConfigLocation = config.getInitParameter("contextConfigLocation");
-        URL xmlPath = null;
+        this.webApplicationContext = new AnnotationConfigWebApplicationContext(sContextConfigLocation, this.parentApplicationContext);
         try {
-            xmlPath = this.getServletContext().getResource(sContextConfigLocation);
-        } catch (Exception e) {
+            Refresh();
+        } catch (BeansException e) {
             throw new RuntimeException(e);
         }
-        this.packageNames = XmlScanComponentHelper.getNodeValue(xmlPath);
-        this.webApplicationContext = new AnnotationConfigWebApplicationContext(sContextConfigLocation, this.parentApplicationContext);
-        Refresh();
     }
 
-    protected void Refresh(){
-        initController();
+    protected void Refresh() throws BeansException {
         initHandlerMappings(this.webApplicationContext);
         initHandlerAdapters(this.webApplicationContext);
-    }
-
-    protected void initController(){
-        this.controllerNames = scanPackages(this.packageNames);
-        for (String controllerName:
-             this.controllerNames) {
-            Object obj = null;
-            Class<?> clz = null;
-            try {
-                clz = Class.forName(controllerName);
-                this.controllerClasses.put(controllerName, clz);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                obj = clz.newInstance();
-                this.controllerObjs.put(controllerName, obj);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private List<String> scanPackages(List<String> packages){
-        List<String> tempControllerNames = new ArrayList<>();
-        for (String packageName:
-             packages) {
-            tempControllerNames.addAll(scanPackage(packageName));
-        }
-        return tempControllerNames;
-    }
-
-    private List<String> scanPackage(String packageName){
-        List<String> tempControllerNames = new ArrayList<>();
-        URI uri = null;
-        try {
-            uri = this.getClass().getClassLoader().getResource("/"+packageName.replaceAll("\\.","/")).toURI();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        File dir = new File(uri);
-        for (File file:
-             dir.listFiles()) {
-            if (file.isDirectory()){
-                scanPackage(packageName+"."+file.getName());
-            }else {
-                String controllerName = packageName+"."+file.getName().replace(".class","");
-                tempControllerNames.add(controllerName);
-            }
-        }
-        return tempControllerNames;
-    }
-
-    protected void initMapping(){
-        for (String controllerName:
-             this.controllerNames) {
-            Class<?> clazz = this.controllerClasses.get(controllerName);
-            Object obj = this.controllerObjs.get(controllerName);
-            Method[] methods = clazz.getDeclaredMethods();
-            if (methods!=null){
-                for (Method method:
-                     methods) {
-                    boolean isRequestMapping = method.isAnnotationPresent(RequestMapping.class);
-                    if (isRequestMapping){
-                        String methodName = method.getName();
-                        String urlMapping = method.getAnnotation(RequestMapping.class).value();
-                        this.urlMappingNames.add(urlMapping);
-                        this.mappingObjs.put(urlMapping,obj);
-                        this.mappingMethods.put(urlMapping,method);
-                    }
-                }
-            }
-        }
-    }
-
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
-        String sPath = request.getServletPath();
-        if (!this.urlMappingNames.contains(sPath)){
-            return;
-        }
-        Object obj = null;
-        Object objResult = null;
-        try {
-            Method method = this.mappingMethods.get(sPath);
-            obj = this.mappingObjs.get(sPath);
-            objResult = method.invoke(obj);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        response.getWriter().append(objResult.toString());
+        initViewResolvers(this.webApplicationContext);
     }
 
     protected void initHandlerMappings(WebApplicationContext wac){
-        this.handlerMapping = new RequestMappingHandlerMapping(wac);
+        try {
+            this.handlerMapping = (HandlerMapping) wac.getBean(HANDLER_MAPPING_BEAN_NAME);
+        } catch (BeansException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    protected void initHandlerAdapters(WebApplicationContext wac){
-        this.handlerAdapter = new RequestMappingHandlerAdapter(wac);
+    protected void initHandlerAdapters(WebApplicationContext wac) throws BeansException {
+        this.handlerAdapter = (HandlerAdapter) wac.getBean(HANDLER_ADAPTER_BEAN_NAME);
+    }
+
+    protected void initViewResolvers(WebApplicationContext wac){
+        try {
+            this.viewResolver = (ViewResolver) wac.getBean(VIEW_RESOLVER_BEAN_NAME);
+        } catch (BeansException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected void service(HttpServletRequest request, HttpServletResponse response){
@@ -177,11 +96,35 @@ public class DispatcherServlet extends HttpServlet {
     protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception{
         HttpServletRequest processedRequest = request;
         HandlerMethod handlerMethod = null;
+        ModelAndView mv = null;
         handlerMethod = this.handlerMapping.getHandler(processedRequest);
         if (handlerMethod==null){
             return;
         }
         HandlerAdapter ha = this.handlerAdapter;
-        ha.handle(processedRequest, response, handlerMethod);
+        mv = ha.handle(processedRequest, response, handlerMethod);
+        render(processedRequest,response,mv);
+    }
+
+    protected void render(HttpServletRequest request,HttpServletResponse response,ModelAndView mv) throws Exception{
+        if (mv==null){
+            response.getWriter().flush();
+            response.getWriter().close();
+            return;
+        }
+        String sTarget = mv.getViewName();
+        Map<String,Object> modelMap = mv.getModel();
+        View view = resolveViewName(sTarget,modelMap,request);
+        view.render(modelMap,request,response);
+    }
+
+    protected View resolveViewName(String viewName,Map<String,Object> model,HttpServletRequest request) throws Exception{
+        if (this.viewResolver!=null){
+            View view = viewResolver.resolveViewName(viewName);
+            if (view!=null){
+                return view;
+            }
+        }
+        return null;
     }
 }

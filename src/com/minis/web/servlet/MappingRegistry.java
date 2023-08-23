@@ -30,15 +30,33 @@ public class MappingRegistry {
         this.mappingObjs = mappingObjs;
     }
 
-    public Map<String, Method> getMethodMethods() {
-        return methodMethods;
+    public Map<String, Method> getMappingMethods() {
+        return mappingMethods;
     }
 
-    public void setMethodMethods(Map<String, Method> methodMethods) {
-        this.methodMethods = methodMethods;
+    public void setMappingMethods(Map<String, Method> mappingMethods) {
+        this.mappingMethods = mappingMethods;
+    }
+
+    public Map<String, String> getMappingMethodNames() {
+        return mappingMethodNames;
+    }
+
+    public void setMappingMethodNames(Map<String, String> mappingMethodNames) {
+        this.mappingMethodNames = mappingMethodNames;
+    }
+
+    public Map<String, Class<?>> getMappingClasses() {
+        return mappingClasses;
+    }
+
+    public void setMappingClasses(Map<String, Class<?>> mappingClasses) {
+        this.mappingClasses = mappingClasses;
     }
 
     private List<String> urlMappingNames = new ArrayList<>();
     private Map<String,Object> mappingObjs = new HashMap<>();
-    private Map<String, Method> methodMethods = new HashMap<>();
+    private Map<String,Method> mappingMethods = new HashMap<>();
+    private Map<String,String> mappingMethodNames = new HashMap<>();
+    private Map<String,Class<?>> mappingClasses = new HashMap<>();
 }

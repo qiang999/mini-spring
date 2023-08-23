@@ -11,7 +11,7 @@ import java.util.EventListener;
  * @Author: Jinqiang.Jiao
  * @Date: 2023/7/18 - 16:54
  */
-public class ApplicationListener implements EventListener {
+public class ApplicationListener<E extends ApplicationEvent> implements EventListener {
     void onApplicationEvent(ApplicationEvent event){
         System.out.println(event.toString());
     }
