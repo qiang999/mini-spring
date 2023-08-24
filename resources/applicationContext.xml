@@ -12,6 +12,15 @@
     </bean>
     <bean id="baseservice" class="com.minis.test.service.BaseService">
     </bean>
+    <bean id="dataSource" class="com.minis.jdbc.datasource.SingleConnectionDataSource">
+        <property type="String" name="driverClassName" value="com.microsoft.sqlserver.jdbc.SQLServerDriver"/>
+        <property type="String" name="url" value="jdbc:sqlserver://localhost:1433;databasename=DEMO;"/>
+        <property type="String" name="username" value="sa"/>
+        <property type="String" name="password" value="Sql2016"/>
+    </bean>
+    <bean id="jdbcTemplate" class="com.minis.jdbc.core.JdbcTemplate" >
+        <property type="javax.sql.DataSource" name="dataSource" ref="dataSource"/>
+    </bean>
     <bean id="handlerMapping" class="com.minis.web.servlet.RequestMappingHandlerMapping"/>
     <bean id="handlerAdapter" class="com.minis.web.servlet.RequestMappingHandlerAdapter">
         <property type="com.minis.web.HttpMessageConverter" name="messageConverter" ref="messageConverter"/>
