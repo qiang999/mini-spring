@@ -2,6 +2,7 @@ package com.minis.jdbc.core;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.List;
 
 /**
  * @Title: JdbcTemplate
@@ -47,17 +48,38 @@ public abstract class JdbcTemplate {
         try {
             con = dataSource.getConnection();
             pstmt = con.prepareStatement(sql);
-            for (int i = 0; i < args.length; i++) {
-                Object arg = args[i];
-                if (arg instanceof String){
-                    pstmt.setString(i+1,(String) arg);
-                }else if (arg instanceof Integer){
-                    pstmt.setInt(i+1,(int)arg);
-                }
-            }
+            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
+            statementSetter.setValues(pstmt);
+            return preparedStatementCallback.doInPreparedStatement(pstmt);
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }finally {
+            pstmt.close();
+            con.close();
         }
-        return preparedStatementCallback.doInPreparedStatement(pstmt);
+    }
+
+    public <T> List<T> query(String sql,Object[] args,RowMapper<T> rowMapper){
+        RowMapperResultSetExtractor<T> resultSetExtractor = new RowMapperResultSetExtractor<>(rowMapper);
+        Connection con = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            con = dataSource.getConnection();
+            pstmt = con.prepareStatement(sql);
+            ArgumentPreparedStatementSetter statementSetter = new ArgumentPreparedStatementSetter(args);
+            statementSetter.setValues(pstmt);
+            rs = pstmt.executeQuery();
+            return resultSetExtractor.extractData(rs);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }finally {
+            try {
+                pstmt.close();
+                con.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

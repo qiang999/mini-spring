@@ -137,6 +137,6 @@ public class SingleConnectionDataSource implements DataSource {
     }
 
     protected Connection getConnectionFromDriverManager(String url,Properties props) throws SQLException{
-        return DriverManager.getConnection(url,props)
+        return DriverManager.getConnection(url,props);
     }
 }
