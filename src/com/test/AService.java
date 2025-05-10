@@ -1,4 +1,4 @@
-package com.minis.test;
+package com.test;
 
 /**
  * @Title: AService

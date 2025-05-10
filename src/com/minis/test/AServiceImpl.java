@@ -1,5 +1,7 @@
 package com.minis.test;
 
+import com.test.AService;
+
 /**
  * @Title: AServiceImpl
  * @Package: com.minis.test
