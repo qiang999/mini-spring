@@ -4,6 +4,7 @@ import com.minis.beans.BeansException;
 import com.minis.beans.PropertyValue;
 import com.minis.beans.PropertyValues;
 import com.minis.beans.factory.BeanFactory;
+import com.minis.beans.factory.FactoryBean;
 import com.minis.beans.factory.config.ArgumentValue;
 import com.minis.beans.factory.config.ArgumentValues;
 
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @Author: Jinqiang.Jiao
  * @Date: 2025/5/8 - 9:58
  */
-public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry implements BeanFactory,BeanDefinitionRegistry {
+public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport implements BeanFactory,BeanDefinitionRegistry {
 
     protected Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
 
@@ -51,11 +52,13 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
                 if (beanDefinition != null) {
                     singleton = createBean(beanDefinition);
                     this.registerSingleton(beanName, singleton);
-                    applyBeanPostProcessorBeforeInitialization(singleton, beanName);
+                    singleton = applyBeanPostProcessorBeforeInitialization(singleton, beanName);
                     if (beanDefinition.getInitMethodName() != null&&!beanDefinition.equals("")) {
                         invokeInitMethod(beanDefinition,singleton);
                     }
                     applyBeanPostProcessorAfterInitialization(singleton, beanName);
+                    this.removeSingleton(beanName);
+                    this.registerSingleton(beanName,singleton);
                 }else {
                     return  null;
                 }
@@ -64,7 +67,20 @@ public abstract class AbstractBeanFactory extends DefaultSingletonBeanRegistry i
         if(singleton==null){
             throw new BeansException("bean is null");
         }
+        if (singleton instanceof FactoryBean){
+            return this.getObjectForBeanInstance(singleton,beanName);
+        }
         return singleton;
+    }
+
+    protected Object getObjectForBeanInstance(Object beanInstance,String beanName){
+        if(!(beanInstance instanceof FactoryBean)){
+            return  beanInstance;
+        }
+        Object object = null;
+        FactoryBean<?> factory =  (FactoryBean<?>) beanInstance;
+        object = getObjectFormFactoryBean(factory,beanName);
+        return object;
     }
 
     private void invokeInitMethod(BeanDefinition beanDefinition,Object object) {
